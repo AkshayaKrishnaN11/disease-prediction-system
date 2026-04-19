@@ -1,0 +1,120 @@
+{
+  "xgboost": {
+    "accuracy": 0.7264957264957265,
+    "f1_score": 0.6964403118249272,
+    "precision": 0.6988690322023655,
+    "recall": 0.7264957264957265,
+    "confusion_matrix": [
+      [
+        10,
+        24
+      ],
+      [
+        8,
+        75
+      ]
+    ],
+    "classification_report": {
+      "0": {
+        "precision": 0.5555555555555556,
+        "recall": 0.29411764705882354,
+        "f1-score": 0.38461538461538464,
+        "support": 34.0
+      },
+      "1": {
+        "precision": 0.7575757575757576,
+        "recall": 0.9036144578313253,
+        "f1-score": 0.8241758241758241,
+        "support": 83.0
+      },
+      "accuracy": 0.7264957264957265,
+      "macro avg": {
+        "precision": 0.6565656565656566,
+        "recall": 0.5988660524450744,
+        "f1-score": 0.6043956043956044,
+        "support": 117.0
+      },
+      "weighted avg": {
+        "precision": 0.6988690322023655,
+        "recall": 0.7264957264957265,
+        "f1-score": 0.6964403118249272,
+        "support": 117.0
+      }
+    },
+    "roc_auc": 0.7611622962437988,
+    "training_time": 0.07271289825439453,
+    "cv_auc_mean": 0.7181824624610694,
+    "cv_auc_std": 0.05561767618470804,
+    "shap_feature_importance": {
+      "Age": 0.7155368328094482,
+      "Alkaline_Phosphotase": 0.6634768843650818,
+      "Total_Protiens": 0.4541478455066681,
+      "Albumin": 0.4527682065963745,
+      "Total_Bilirubin": 0.4523261785507202,
+      "Alamine_Aminotransferase": 0.44221848249435425,
+      "Aspartate_Aminotransferase": 0.4050476849079132,
+      "Direct_Bilirubin": 0.3631657361984253,
+      "Albumin_and_Globulin_Ratio": 0.22810021042823792,
+      "Gender": 0.0604555606842041
+    }
+  },
+  "random_forest": {
+    "accuracy": 0.717948717948718,
+    "f1_score": 0.6777490206061636,
+    "precision": 0.6835595776772246,
+    "recall": 0.717948717948718,
+    "confusion_matrix": [
+      [
+        8,
+        26
+      ],
+      [
+        7,
+        76
+      ]
+    ],
+    "classification_report": {
+      "0": {
+        "precision": 0.5333333333333333,
+        "recall": 0.23529411764705882,
+        "f1-score": 0.32653061224489793,
+        "support": 34.0
+      },
+      "1": {
+        "precision": 0.7450980392156863,
+        "recall": 0.9156626506024096,
+        "f1-score": 0.8216216216216217,
+        "support": 83.0
+      },
+      "accuracy": 0.717948717948718,
+      "macro avg": {
+        "precision": 0.6392156862745098,
+        "recall": 0.5754783841247342,
+        "f1-score": 0.5740761169332598,
+        "support": 117.0
+      },
+      "weighted avg": {
+        "precision": 0.6835595776772246,
+        "recall": 0.717948717948718,
+        "f1-score": 0.6777490206061636,
+        "support": 117.0
+      }
+    },
+    "roc_auc": 0.7717930545712262,
+    "training_time": 0.17546463012695312,
+    "cv_auc_mean": 0.7150702071100081,
+    "cv_auc_std": 0.036425787338682444,
+    "rf_feature_importance": {
+      "Age": 0.14535662776211863,
+      "Gender": 0.016319516580464773,
+      "Total_Bilirubin": 0.09654437081963062,
+      "Direct_Bilirubin": 0.0677755883622547,
+      "Alkaline_Phosphotase": 0.1518318007734121,
+      "Alamine_Aminotransferase": 0.13002788551528188,
+      "Aspartate_Aminotransferase": 0.13133764032720902,
+      "Total_Protiens": 0.08645408254005686,
+      "Albumin": 0.09694274696609943,
+      "Albumin_and_Globulin_Ratio": 0.07740974035347198
+    }
+  }
+}

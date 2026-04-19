@@ -1,0 +1,65 @@
+# ============================================
+# Disease Prediction System — .gitignore
+# ============================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# --- Virtual Environment ---
+venv/
+.venv/
+env/
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Data (too large for GitHub) ---
+data/raw/
+data/processed/
+
+# --- Trained Models (too large for GitHub) ---
+# Push these separately or use Git LFS
+saved_models/**/*.pkl
+saved_models/**/*.pth
+saved_models/**/*.png
+
+# Keep metrics.json for the frontend/demo
+!saved_models/**/metrics.json
+
+# --- MLflow ---
+mlruns/
+mlflow.db
+
+# --- Environment ---
+.env
+.env.local
+
+# --- Frontend ---
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# --- Docker ---
+*.log
+
+# --- Misc ---
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+.coverage

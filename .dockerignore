@@ -1,0 +1,18 @@
+# Backend .dockerignore
+venv/
+.venv/
+__pycache__/
+*.pyc
+.git/
+.github/
+frontend/
+data/raw/
+mlruns/
+.env
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+node_modules/
+.next/
+*.md
+!README.md

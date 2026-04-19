@@ -1,0 +1,126 @@
+{
+  "xgboost": {
+    "accuracy": 1.0,
+    "f1_score": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "confusion_matrix": [
+      [
+        100,
+        0
+      ],
+      [
+        0,
+        105
+      ]
+    ],
+    "classification_report": {
+      "0": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 100.0
+      },
+      "1": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 105.0
+      },
+      "accuracy": 1.0,
+      "macro avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 205.0
+      },
+      "weighted avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 205.0
+      }
+    },
+    "roc_auc": 1.0,
+    "training_time": 0.09766793251037598,
+    "cv_auc_mean": 0.9956547619047619,
+    "cv_auc_std": 0.004565712882670543,
+    "shap_feature_importance": {
+      "ca": 1.416688084602356,
+      "cp": 1.3942636251449585,
+      "thal": 0.876467764377594,
+      "oldpeak": 0.8543362617492676,
+      "sex": 0.6836643815040588,
+      "age": 0.6326311826705933,
+      "thalach": 0.6182012557983398,
+      "slope": 0.5617643594741821,
+      "exang": 0.5009500980377197,
+      "chol": 0.48846539855003357,
+      "trestbps": 0.2573019564151764,
+      "restecg": 0.2504867613315582,
+      "fbs": 0.06017819419503212
+    }
+  },
+  "random_forest": {
+    "accuracy": 1.0,
+    "f1_score": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "confusion_matrix": [
+      [
+        100,
+        0
+      ],
+      [
+        0,
+        105
+      ]
+    ],
+    "classification_report": {
+      "0": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 100.0
+      },
+      "1": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 105.0
+      },
+      "accuracy": 1.0,
+      "macro avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 205.0
+      },
+      "weighted avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 205.0
+      }
+    },
+    "roc_auc": 0.9999999999999999,
+    "training_time": 0.2119753360748291,
+    "cv_auc_mean": 0.9966665558628515,
+    "cv_auc_std": 0.003322867318852084,
+    "rf_feature_importance": {
+      "age": 0.08751138510663596,
+      "sex": 0.027804284174839437,
+      "cp": 0.15471708989250632,
+      "trestbps": 0.06865940716422506,
+      "chol": 0.0706371176123983,
+      "fbs": 0.007818486539717255,
+      "restecg": 0.018663192073720126,
+      "thalach": 0.11523345334572672,
+      "exang": 0.07568130591687301,
+      "oldpeak": 0.10235338550266812,
+      "slope": 0.04377384594129408,
+      "ca": 0.1185814673473031,
+      "thal": 0.10856557938209255
+    }
+  }
+}
