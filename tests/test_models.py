@@ -41,6 +41,8 @@ class TestModelFiles:
         assert metrics_path.exists(), f"metrics.json missing for {disease}"
 
     def test_cnn_model_exists(self):
+        if self.is_ci():
+            pytest.skip("Skipping CNN model check in CI (gitignored)")
         cnn_path = SAVED_MODELS_DIR / "chest_xray" / "resnet50_pneumonia.pth"
         assert cnn_path.exists(), f"CNN model missing: {cnn_path}"
 
