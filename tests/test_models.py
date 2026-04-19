@@ -18,8 +18,16 @@ from src.config import SAVED_MODELS_DIR, DISEASE_CONFIGS, SUPPORTED_DISEASES
 class TestModelFiles:
     """Verify all expected model files exist."""
 
+    def is_ci(self):
+        """Check if running in GitHub Actions."""
+        import os
+        return os.getenv("GITHUB_ACTIONS") == "true"
+
     @pytest.mark.parametrize("disease", SUPPORTED_DISEASES)
     def test_model_files_exist(self, disease):
+        if self.is_ci():
+            pytest.skip("Skipping file existence check in CI (models are gitignored)")
+        
         disease_dir = SAVED_MODELS_DIR / disease
         assert disease_dir.exists(), f"Model directory missing: {disease_dir}"
 
@@ -44,8 +52,14 @@ class TestModelFiles:
 class TestTabularModelLoading:
     """Test that tabular models can be loaded and produce predictions."""
 
+    def is_ci(self):
+        import os
+        return os.getenv("GITHUB_ACTIONS") == "true"
+
     @pytest.mark.parametrize("disease", SUPPORTED_DISEASES)
     def test_model_loads(self, disease):
+        if self.is_ci():
+            pytest.skip("Skipping model loading test in CI")
         from api.dependencies import load_tabular_model
         model, model_type = load_tabular_model(disease)
         assert model is not None
@@ -53,6 +67,8 @@ class TestTabularModelLoading:
 
     @pytest.mark.parametrize("disease", SUPPORTED_DISEASES)
     def test_model_predicts(self, disease):
+        if self.is_ci():
+            pytest.skip("Skipping prediction test in CI")
         from api.dependencies import load_tabular_model
         model, _ = load_tabular_model(disease)
 
@@ -69,6 +85,8 @@ class TestTabularModelLoading:
 
     @pytest.mark.parametrize("disease", SUPPORTED_DISEASES)
     def test_model_predict_proba(self, disease):
+        if self.is_ci():
+            pytest.skip("Skipping probability test in CI")
         from api.dependencies import load_tabular_model
         model, _ = load_tabular_model(disease)
 
