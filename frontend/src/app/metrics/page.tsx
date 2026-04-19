@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { getMetrics, getAllMetrics, ModelMetrics } from "@/lib/api";
+import { getMetrics, ModelMetrics } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
   Activity,
@@ -27,8 +27,6 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
-  PieChart,
-  Pie,
 } from "recharts";
 
 const diseaseIcons: Record<string, any> = {
@@ -49,7 +47,7 @@ const diseaseNames: Record<string, string> = {
   chest_xray: "Pneumonia (X-Ray)",
 };
 
-export default function MetricsPage() {
+function MetricsContent() {
   const searchParams = useSearchParams();
   const initialDisease = searchParams.get("disease") || "diabetes";
   const [selectedDisease, setSelectedDisease] = useState(initialDisease);
@@ -314,5 +312,17 @@ export default function MetricsPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function MetricsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center p-12">
+        <div className="animate-pulse text-muted-foreground">Initializing metrics engine...</div>
+      </div>
+    }>
+      <MetricsContent />
+    </Suspense>
   );
 }
