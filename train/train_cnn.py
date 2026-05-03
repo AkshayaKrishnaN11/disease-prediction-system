@@ -1,6 +1,6 @@
 """
 CNN Trainer — ResNet-50 transfer learning for chest X-ray pneumonia detection.
-Integrates MLflow tracking and Grad-CAM explainability.
+Generates Grad-CAM visualizations for explainability.
 
 Usage:
     python -m train.train_cnn --epochs 15 --batch-size 32
@@ -19,9 +19,6 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from pathlib import Path
 from tqdm import tqdm
 
-import mlflow
-import mlflow.pytorch
-
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -30,7 +27,7 @@ import matplotlib.pyplot as plt
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.config import SAVED_MODELS_DIR, CNN_PARAMS, MLFLOW_TRACKING_URI, DATA_DIR
+from src.config import SAVED_MODELS_DIR, CNN_PARAMS, DATA_DIR
 from src.preprocessing.image import get_xray_dataloaders, get_val_transforms
 from src.utils.metrics import evaluate_model, plot_confusion_matrix, plot_roc_curve
 from src.explainability.gradcam import save_gradcam_plot
@@ -142,7 +139,7 @@ def train_cnn(
     data_dir: str = None,
     num_workers: int = 4,
 ):
-    """Full CNN training pipeline with MLflow logging and Grad-CAM."""
+    """Full CNN training pipeline with Grad-CAM visualizations."""
 
     epochs = epochs or CNN_PARAMS["epochs"]
     batch_size = batch_size or CNN_PARAMS["batch_size"]
@@ -160,7 +157,7 @@ def train_cnn(
     print(f"  LR:          {learning_rate}")
     print(f"  Data dir:    {data_dir}")
 
-    # ─── Data ───────────────────────────────────
+    # ─── Data ─────────────────────────────────
     print("\n📊 Loading chest X-ray data...")
     train_loader, val_loader, test_loader = get_xray_dataloaders(
         data_dir=data_dir,
@@ -174,7 +171,7 @@ def train_cnn(
         print(f"  → Or manually place images in: {data_dir}/train/NORMAL/ and {data_dir}/train/PNEUMONIA/")
         return None
 
-    # ─── Model ──────────────────────────────────
+    # ─── Model ────────────────────────────────
     print("\n🧠 Building ResNet-50 model...")
     model = build_resnet50(num_classes=CNN_PARAMS["num_classes"])
     model = model.to(device)
@@ -199,199 +196,162 @@ def train_cnn(
     plots_dir = cnn_dir / "plots"
     plots_dir.mkdir(parents=True, exist_ok=True)
 
-    # ─── MLflow ─────────────────────────────────
-    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    mlflow.set_experiment("chest_xray_pneumonia")
+    # ─── Training Loop ─────────────────────
+    best_val_loss = float("inf")
+    best_model_wts = None
+    patience_counter = 0
+    train_losses, val_losses = [], []
+    train_accs, val_accs = [], []
 
-    with mlflow.start_run(run_name="resnet50_transfer_learning"):
-        mlflow.log_params({
-            "model": "ResNet-50",
-            "pretrained": True,
-            "epochs": epochs,
-            "batch_size": batch_size,
-            "learning_rate": learning_rate,
-            "weight_decay": CNN_PARAMS["weight_decay"],
-            "image_size": CNN_PARAMS["image_size"],
-            "optimizer": "AdamW",
-            "frozen_layers": "conv1, bn1, layer1, layer2",
-        })
+    print(f"\n🚀 Starting training...")
+    for epoch in range(epochs):
+        print(f"\n  Epoch {epoch+1}/{epochs}")
 
-        # ─── Training Loop ─────────────────────
-        best_val_loss = float("inf")
-        best_model_wts = None
-        patience_counter = 0
-        train_losses, val_losses = [], []
-        train_accs, val_accs = [], []
-
-        print(f"\n🚀 Starting training...")
-        for epoch in range(epochs):
-            print(f"\n  Epoch {epoch+1}/{epochs}")
-
-            # Train
-            train_loss, train_acc = train_one_epoch(
-                model, train_loader, criterion, optimizer, device
-            )
-
-            # Validate
-            val_loss, val_acc, val_preds, val_labels, val_probs = validate(
-                model, val_loader, criterion, device
-            )
-
-            scheduler.step(val_loss)
-            current_lr = optimizer.param_groups[0]["lr"]
-
-            train_losses.append(train_loss)
-            val_losses.append(val_loss)
-            train_accs.append(train_acc)
-            val_accs.append(val_acc)
-
-            print(f"    Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.4f}")
-            print(f"    Val Loss:   {val_loss:.4f} | Val Acc:   {val_acc:.4f}")
-            print(f"    LR: {current_lr:.6f}")
-
-            # MLflow step logging
-            mlflow.log_metrics({
-                "train_loss": train_loss,
-                "train_accuracy": train_acc,
-                "val_loss": val_loss,
-                "val_accuracy": val_acc,
-                "learning_rate": current_lr,
-            }, step=epoch)
-
-            # Early stopping
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                best_model_wts = copy.deepcopy(model.state_dict())
-                patience_counter = 0
-                print(f"    ✓ Best model saved (val_loss: {val_loss:.4f})")
-            else:
-                patience_counter += 1
-                if patience_counter >= CNN_PARAMS["patience"]:
-                    print(f"\n  ⏹ Early stopping at epoch {epoch+1}")
-                    break
-
-        # ─── Load Best Model ───────────────────
-        if best_model_wts:
-            model.load_state_dict(best_model_wts)
-
-        # ─── Test Evaluation ───────────────────
-        print(f"\n📊 Evaluating on test set...")
-        test_loss, test_acc, test_preds, test_labels, test_probs = validate(
-            model, test_loader, criterion, device
+        # Train
+        train_loss, train_acc = train_one_epoch(
+            model, train_loader, criterion, optimizer, device
         )
 
-        test_metrics = evaluate_model(test_labels, test_preds, test_probs)
-        print(f"  Test Accuracy: {test_metrics['accuracy']:.4f}")
-        print(f"  Test F1:       {test_metrics['f1_score']:.4f}")
-        if test_metrics["roc_auc"]:
-            print(f"  Test AUC:      {test_metrics['roc_auc']:.4f}")
-
-        mlflow.log_metrics({
-            "test_accuracy": test_metrics["accuracy"],
-            "test_f1": test_metrics["f1_score"],
-            "test_roc_auc": test_metrics["roc_auc"] or 0,
-        })
-
-        # ─── Plots ─────────────────────────────
-        # Training curves
-        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-        axes[0].plot(train_losses, label="Train", color="#2196F3", lw=2)
-        axes[0].plot(val_losses, label="Validation", color="#EF5350", lw=2)
-        axes[0].set_xlabel("Epoch")
-        axes[0].set_ylabel("Loss")
-        axes[0].set_title("Loss Curves")
-        axes[0].legend()
-        axes[0].grid(alpha=0.3)
-
-        axes[1].plot(train_accs, label="Train", color="#2196F3", lw=2)
-        axes[1].plot(val_accs, label="Validation", color="#EF5350", lw=2)
-        axes[1].set_xlabel("Epoch")
-        axes[1].set_ylabel("Accuracy")
-        axes[1].set_title("Accuracy Curves")
-        axes[1].legend()
-        axes[1].grid(alpha=0.3)
-
-        plt.suptitle("ResNet-50 Training History", fontsize=14, fontweight="bold")
-        plt.tight_layout()
-        curves_path = str(plots_dir / "training_curves.png")
-        fig.savefig(curves_path, dpi=150, bbox_inches="tight")
-        plt.close(fig)
-        mlflow.log_artifact(curves_path)
-
-        # Confusion matrix
-        cm_path = plot_confusion_matrix(
-            test_labels, test_preds,
-            labels=["Normal", "Pneumonia"],
-            save_path=str(plots_dir / "confusion_matrix.png"),
+        # Validate
+        val_loss, val_acc, val_preds, val_labels, val_probs = validate(
+            model, val_loader, criterion, device
         )
-        mlflow.log_artifact(cm_path)
 
-        # ROC curve
-        if test_metrics["roc_auc"]:
-            roc_path = plot_roc_curve(
-                test_labels, test_probs,
-                save_path=str(plots_dir / "roc_curve.png"),
-            )
-            mlflow.log_artifact(roc_path)
+        scheduler.step(val_loss)
+        current_lr = optimizer.param_groups[0]["lr"]
 
-        # ─── Grad-CAM ──────────────────────────
-        print(f"\n🔍 Generating Grad-CAM visualizations...")
-        try:
-            model.eval()
-            # Get a few test images for Grad-CAM
-            xray_dir = Path(data_dir)
-            test_images_dir = xray_dir / "test"
-            gradcam_count = 0
+        train_losses.append(train_loss)
+        val_losses.append(val_loss)
+        train_accs.append(train_acc)
+        val_accs.append(val_acc)
 
-            for cls in ["NORMAL", "PNEUMONIA"]:
-                cls_dir = test_images_dir / cls
-                if not cls_dir.exists():
+        print(f"    Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.4f}")
+        print(f"    Val Loss:   {val_loss:.4f} | Val Acc:   {val_acc:.4f}")
+        print(f"    LR: {current_lr:.6f}")
+
+        # Early stopping
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            best_model_wts = copy.deepcopy(model.state_dict())
+            patience_counter = 0
+            print(f"    ✓ Best model saved (val_loss: {val_loss:.4f})")
+        else:
+            patience_counter += 1
+            if patience_counter >= CNN_PARAMS["patience"]:
+                print(f"\n  ⏹ Early stopping at epoch {epoch+1}")
+                break
+
+    # ─── Load Best Model ───────────────────
+    if best_model_wts:
+        model.load_state_dict(best_model_wts)
+
+    # ─── Test Evaluation ───────────────────
+    print(f"\n📊 Evaluating on test set...")
+    test_loss, test_acc, test_preds, test_labels, test_probs = validate(
+        model, test_loader, criterion, device
+    )
+
+    test_metrics = evaluate_model(test_labels, test_preds, test_probs)
+    print(f"  Test Accuracy: {test_metrics['accuracy']:.4f}")
+    print(f"  Test F1:       {test_metrics['f1_score']:.4f}")
+    if test_metrics["roc_auc"]:
+        print(f"  Test AUC:      {test_metrics['roc_auc']:.4f}")
+
+    # ─── Plots ─────────────────────────────
+    # Training curves
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+    axes[0].plot(train_losses, label="Train", color="#2196F3", lw=2)
+    axes[0].plot(val_losses, label="Validation", color="#EF5350", lw=2)
+    axes[0].set_xlabel("Epoch")
+    axes[0].set_ylabel("Loss")
+    axes[0].set_title("Loss Curves")
+    axes[0].legend()
+    axes[0].grid(alpha=0.3)
+
+    axes[1].plot(train_accs, label="Train", color="#2196F3", lw=2)
+    axes[1].plot(val_accs, label="Validation", color="#EF5350", lw=2)
+    axes[1].set_xlabel("Epoch")
+    axes[1].set_ylabel("Accuracy")
+    axes[1].set_title("Accuracy Curves")
+    axes[1].legend()
+    axes[1].grid(alpha=0.3)
+
+    plt.suptitle("ResNet-50 Training History", fontsize=14, fontweight="bold")
+    plt.tight_layout()
+    curves_path = str(plots_dir / "training_curves.png")
+    fig.savefig(curves_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+    # Confusion matrix
+    plot_confusion_matrix(
+        test_labels, test_preds,
+        labels=["Normal", "Pneumonia"],
+        save_path=str(plots_dir / "confusion_matrix.png"),
+    )
+
+    # ROC curve
+    if test_metrics["roc_auc"]:
+        plot_roc_curve(
+            test_labels, test_probs,
+            save_path=str(plots_dir / "roc_curve.png"),
+        )
+
+    # ─── Grad-CAM ──────────────────────────
+    print(f"\n🔍 Generating Grad-CAM visualizations...")
+    try:
+        model.eval()
+        # Get a few test images for Grad-CAM
+        xray_dir = Path(data_dir)
+        test_images_dir = xray_dir / "test"
+        gradcam_count = 0
+
+        for cls in ["NORMAL", "PNEUMONIA"]:
+            cls_dir = test_images_dir / cls
+            if not cls_dir.exists():
+                continue
+            image_paths = list(cls_dir.glob("*.jpeg")) + list(cls_dir.glob("*.jpg")) + list(cls_dir.glob("*.png"))
+            for img_path in image_paths[:3]:  # 3 per class
+                # Load original image
+                original = cv2.imread(str(img_path))
+                if original is None:
                     continue
-                image_paths = list(cls_dir.glob("*.jpeg")) + list(cls_dir.glob("*.jpg")) + list(cls_dir.glob("*.png"))
-                for img_path in image_paths[:3]:  # 3 per class
-                    # Load original image
-                    original = cv2.imread(str(img_path))
-                    if original is None:
-                        continue
-                    original = cv2.cvtColor(original, cv2.COLOR_BGR2RGB)
+                original = cv2.cvtColor(original, cv2.COLOR_BGR2RGB)
 
-                    # Preprocess for model
-                    transform = get_val_transforms()
-                    augmented = transform(image=original)
-                    input_tensor = augmented["image"].unsqueeze(0).to(device)
+                # Preprocess for model
+                transform = get_val_transforms()
+                augmented = transform(image=original)
+                input_tensor = augmented["image"].unsqueeze(0).to(device)
 
-                    # Generate Grad-CAM
-                    gradcam_path = save_gradcam_plot(
-                        model, input_tensor, original,
-                        save_path=str(plots_dir / f"gradcam_{cls.lower()}_{gradcam_count}.png"),
-                        target_layer="layer4",
-                    )
-                    mlflow.log_artifact(gradcam_path)
-                    gradcam_count += 1
+                # Generate Grad-CAM
+                save_gradcam_plot(
+                    model, input_tensor, original,
+                    save_path=str(plots_dir / f"gradcam_{cls.lower()}_{gradcam_count}.png"),
+                    target_layer="layer4",
+                )
+                gradcam_count += 1
 
-            print(f"  ✓ Generated {gradcam_count} Grad-CAM visualizations")
-        except Exception as e:
-            print(f"  ⚠ Grad-CAM generation failed: {e}")
+        print(f"  ✓ Generated {gradcam_count} Grad-CAM visualizations")
+    except Exception as e:
+        print(f"  ⚠ Grad-CAM generation failed: {e}")
 
-        # ─── Save Model ────────────────────────
-        model_path = cnn_dir / "resnet50_pneumonia.pth"
-        torch.save({
-            "model_state_dict": model.state_dict(),
-            "num_classes": CNN_PARAMS["num_classes"],
-            "image_size": CNN_PARAMS["image_size"],
-            "test_metrics": test_metrics,
-        }, model_path)
-        mlflow.pytorch.log_model(model, "resnet50_model")
+    # ─── Save Model ────────────────────────
+    model_path = cnn_dir / "resnet50_pneumonia.pth"
+    torch.save({
+        "model_state_dict": model.state_dict(),
+        "num_classes": CNN_PARAMS["num_classes"],
+        "image_size": CNN_PARAMS["image_size"],
+        "test_metrics": test_metrics,
+    }, model_path)
 
-        # Save metrics
-        from src.utils.metrics import save_metrics_json
-        save_metrics_json(test_metrics, str(cnn_dir / "metrics.json"))
+    # Save metrics
+    from src.utils.metrics import save_metrics_json
+    save_metrics_json(test_metrics, str(cnn_dir / "metrics.json"))
 
-        print(f"\n✅ CNN Training Complete!")
-        print(f"   Model:   {model_path}")
-        print(f"   Metrics: {cnn_dir / 'metrics.json'}")
-        print(f"   Plots:   {plots_dir}")
+    print(f"\n✅ CNN Training Complete!")
+    print(f"   Model:   {model_path}")
+    print(f"   Metrics: {cnn_dir / 'metrics.json'}")
+    print(f"   Plots:   {plots_dir}")
 
     return test_metrics
 

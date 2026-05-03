@@ -9,8 +9,6 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
-from imblearn.over_sampling import SMOTE
-
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from src.config import DATA_DIR, DISEASE_CONFIGS, RANDOM_STATE, TEST_SIZE

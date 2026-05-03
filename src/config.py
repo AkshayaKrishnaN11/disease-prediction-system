@@ -3,29 +3,18 @@ Global configuration for the Disease Prediction System.
 Centralizes paths, hyperparameters, disease definitions, and feature columns.
 """
 
-import os
 from pathlib import Path
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # ──────────────────────────────────────────────
 # Paths
 # ──────────────────────────────────────────────
 ROOT_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = ROOT_DIR / os.getenv("DATA_DIR", "data/raw")
-SAVED_MODELS_DIR = ROOT_DIR / os.getenv("SAVED_MODELS_DIR", "saved_models")
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "mlruns")
+DATA_DIR = ROOT_DIR / "data" / "raw"
+SAVED_MODELS_DIR = ROOT_DIR / "saved_models"
 
 # Ensure directories exist
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 SAVED_MODELS_DIR.mkdir(parents=True, exist_ok=True)
-
-# ──────────────────────────────────────────────
-# API Config
-# ──────────────────────────────────────────────
-API_HOST = os.getenv("API_HOST", "0.0.0.0")
-API_PORT = int(os.getenv("API_PORT", 8000))
 
 # ──────────────────────────────────────────────
 # Hyperparameters

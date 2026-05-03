@@ -1,110 +1,63 @@
 # 🏥 Disease Prediction & Medical Diagnosis System
 
-An end-to-end ML-powered system for predicting diseases from patient data and chest X-rays, with a modern Next.js dashboard and full deployment pipeline.
+An ML-powered system for predicting diseases from patient data and chest X-rays.
 
-## 🤖 Models
+## Features
 
-### Tabular (XGBoost + Random Forest)
+- **5 Tabular Disease Predictions** — Diabetes, Heart Disease, Kidney Disease, Liver Disease, Breast Cancer (XGBoost + Random Forest)
+- **Chest X-Ray Pneumonia Detection** — ResNet-50 CNN with transfer learning
+- **Explainability** — SHAP feature contributions (tabular) + Grad-CAM heatmaps (X-ray)
+- **Interactive Web App** — Streamlit dashboard with prediction forms, training controls, and metrics viewer
 
-| Disease        | Dataset      | Features                         |
-| -------------- | ------------ | -------------------------------- |
-| Diabetes       | Pima Indians | Glucose, BMI, Age, etc.          |
-| Heart Disease  | Cleveland    | Chest pain, Cholesterol, etc.    |
-| Kidney Disease | UCI CKD      | Albumin, Blood Pressure, etc.    |
-| Liver Disease  | ILPD         | Bilirubin, Proteins, etc.        |
-| Breast Cancer  | Wisconsin    | Radius, Texture, Perimeter, etc. |
-
-### Computer Vision (ResNet-50)
-
-| Task                | Dataset     | Architecture                  |
-| ------------------- | ----------- | ----------------------------- |
-| Pneumonia Detection | Chest X-Ray | ResNet-50 (Transfer Learning) |
-
-## 📁 Project Structure
-
-```
-disease_anti/
-├── src/                  # Core ML code (config, preprocessing, explainability)
-├── train/                # Training scripts (tabular + CNN)
-├── api/                  # FastAPI backend (predict, metrics, health)
-├── frontend/             # Next.js 14 dashboard (TypeScript + Tailwind)
-├── tests/                # Pytest test suite (API + model tests)
-├── saved_models/         # Trained model artifacts + metrics
-├── data/                 # Dataset downloader + raw data
-├── Dockerfile            # Backend Docker image
-├── docker-compose.yml    # Full-stack Docker compose
-├── railway.toml          # Railway deployment config
-├── .github/workflows/    # GitHub Actions CI pipeline
-└── requirements.txt      # Python dependencies
-```
-
-## 🚀 Quick Start
-
-### 1. Setup Environment
+## Setup
 
 ```bash
-python -m venv venv
-venv\Scripts\activate          # Windows
+# 1. Install dependencies
 pip install -r requirements.txt
-```
 
-### 2. Train Models
+# 2. Download datasets
+python -m data.download_datasets
 
-```bash
+# 3. Train models
 python -m train.train_tabular --disease all
 python -m train.train_cnn --epochs 15
+
+# 4. Run the app
+streamlit run app.py
 ```
 
-### 3. Start Backend API
+## Project Structure
 
-```bash
-python -m api.main
+```
+├── app.py                      # Streamlit web application
+├── requirements.txt            # Python dependencies
+├── data/
+│   ├── download_datasets.py    # Dataset downloader
+│   └── raw/                    # Raw CSV datasets
+├── src/
+│   ├── config.py               # Global configuration
+│   ├── preprocessing/
+│   │   ├── tabular.py          # Tabular data preprocessing
+│   │   └── image.py            # X-ray image preprocessing
+│   ├── models/
+│   │   └── cnn_trainer_utils.py  # CNN model utilities
+│   ├── explainability/
+│   │   ├── shap_explainer.py   # SHAP explanations
+│   │   └── gradcam.py          # Grad-CAM heatmaps
+│   └── utils/
+│       └── metrics.py          # Evaluation metrics & plots
+├── train/
+│   ├── train_tabular.py        # Tabular model trainer
+│   └── train_cnn.py            # CNN trainer
+└── saved_models/               # Trained model artifacts
 ```
 
-API docs: http://localhost:8000/docs
+## Tech Stack
 
-### 4. Start Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Dashboard: http://localhost:3000
-
-### 5. Run Tests
-
-```bash
-pytest tests/ -v
-```
-
-## 🐳 Docker
-
-```bash
-docker-compose up --build
-```
-
-Backend: http://localhost:8000 · Frontend: http://localhost:3000
-
-## ☁️ Deployment
-
-| Component   | Platform       | Config                     |
-| ----------- | -------------- | -------------------------- |
-| Backend API | Railway        | `railway.toml`             |
-| Frontend    | Vercel         | `frontend/vercel.json`     |
-| CI/CD       | GitHub Actions | `.github/workflows/ci.yml` |
-
-## 📊 Explainability
-
-- **SHAP** — Feature importance for tabular models
-- **Grad-CAM** — Heatmap overlays on X-ray predictions
-
-## 🛠 Tech Stack
-
-- **ML**: XGBoost, Random Forest, PyTorch (ResNet-50)
-- **Backend**: FastAPI + Pydantic + Uvicorn
-- **Frontend**: Next.js 14 + TypeScript + Tailwind + Recharts
-- **Tracking**: MLflow
-- **Testing**: Pytest + FastAPI TestClient
-- **DevOps**: Docker, GitHub Actions, Railway, Vercel
+| Component        | Technology                    |
+|------------------|-------------------------------|
+| Tabular ML       | XGBoost, Random Forest        |
+| Deep Learning    | PyTorch, ResNet-50            |
+| Explainability   | SHAP, Grad-CAM                |
+| Frontend         | Streamlit                     |
+| Data Processing  | Pandas, Scikit-learn, OpenCV  |
